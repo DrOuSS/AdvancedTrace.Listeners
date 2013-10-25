@@ -1,0 +1,25 @@
+#Projects output
+[Bb]in
+[Dd]ebug*/
+[Rr]elease*/
+obj/
+
+
+#Nuget files
+*.nupkg
+packages/
+
+#Resharper files
+*.resharper.user
+_ReSharper*/
+
+#Visual Studio files
+*.suo
+*.user
+*.userprefs
+
+#Xamarin
+test-results/
+
+#Windows files
+Thumbs.db
