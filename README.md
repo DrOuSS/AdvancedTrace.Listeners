@@ -7,6 +7,7 @@ Contains :
    
 
 ## Contributors
-Thanks to all contributors
-[DrOuSS] (https://github.com/DrOuSS/)
-[FModolo] (https://github.com/FModolo/)
+Thanks to all contributors :
+
+- [DrOuSS] (https://github.com/DrOuSS/)
+- [FModolo] (https://github.com/FModolo/)
