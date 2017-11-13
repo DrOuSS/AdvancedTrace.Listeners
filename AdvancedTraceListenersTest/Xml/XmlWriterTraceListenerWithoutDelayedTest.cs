@@ -11,14 +11,8 @@ using NUnit.Framework;
 namespace AdvancedTraceListenersTest.Xml
 {
     [TestFixture]
-    public class XmlWriterTraceListenerWithoutDelayedTest
+    public class XmlWriterTraceListenerWithoutDelayedTest: XmlWriterTraceListenerTest
     {
-        private readonly string _currentDirectory;
-
-        public XmlWriterTraceListenerWithoutDelayedTest()
-        {
-            _currentDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Today.ToString("yyyy-MM-dd"));
-        }
 
         [Test]
         [ExpectedException("System.ArgumentException")]
@@ -85,7 +79,7 @@ namespace AdvancedTraceListenersTest.Xml
 
             for (var i = 1; i <= 5; i++)
             {
-                var pathFileSession = Path.Combine(_currentDirectory, "Working_session_" + i + ".xml");
+                var pathFileSession = Path.Combine(CurrentDirectory, "Working_session_" + i + ".xml");
 
                 using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory))
                     logStorage.WriteLineEx("Test", "1");
@@ -101,7 +95,7 @@ namespace AdvancedTraceListenersTest.Xml
 
             InstanciationVerifyCreationDirectory();
 
-            var filesInDirectory = Directory.GetFiles(_currentDirectory).Select(Path.GetFileName).ToList();
+            var filesInDirectory = Directory.GetFiles(CurrentDirectory).Select(Path.GetFileName).ToList();
 
             Assert.IsTrue(filesInDirectory.Count == 9, filesInDirectory.Count + " files found in directory");
             Assert.IsTrue(filesInDirectory.Contains("Working_session_1.xml"), "Working_session_1.xml is missing");
@@ -131,7 +125,7 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
@@ -142,7 +136,7 @@ namespace AdvancedTraceListenersTest.Xml
 
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
@@ -158,7 +152,7 @@ namespace AdvancedTraceListenersTest.Xml
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
@@ -190,7 +184,7 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
@@ -206,7 +200,7 @@ namespace AdvancedTraceListenersTest.Xml
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
@@ -261,7 +255,7 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
@@ -298,7 +292,7 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
@@ -326,13 +320,9 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
         }
 
-        private void CleanOutput()
-        {
-            if (Directory.Exists(_currentDirectory))
-                Directory.Delete(_currentDirectory, true);
-        }
+
     }
 }

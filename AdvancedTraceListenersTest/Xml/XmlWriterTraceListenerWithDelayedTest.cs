@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -11,15 +10,8 @@ using NUnit.Framework;
 
 namespace AdvancedTraceListenersTest.Xml
 {
-    public class XmlWriterTraceListenerWithDelayedTest
+    public class XmlWriterTraceListenerWithDelayedTest : XmlWriterTraceListenerTest
     {
-        private readonly string _currentDirectory;
-
-        public XmlWriterTraceListenerWithDelayedTest()
-        {
-            _currentDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Today.ToString("yyyy-MM-dd"));
-        }
-
         [Test]
         public void Check1TraceInformationWithDelayed()
         {
@@ -33,7 +25,7 @@ namespace AdvancedTraceListenersTest.Xml
                 Thread.Sleep(31000);
 
                 var xmlDoc = new XmlDocument();
-                xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+                xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
 
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
@@ -78,14 +70,8 @@ namespace AdvancedTraceListenersTest.Xml
                 Thread.Sleep(31000);
 
                 var xmlDoc = new XmlDocument();
-                xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+                xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
             }
-        }
-
-        private void CleanOutput()
-        {
-            if (Directory.Exists(_currentDirectory))
-                Directory.Delete(_currentDirectory, true);
         }
     }
 }
