@@ -54,6 +54,9 @@ namespace AdvancedTraceListeners.Xml
 
             _logFileManager = new LogFileManager(ApplicationName, BaseRootPath, historyDayCount);
 
+            _logFileManager.CreateNewLogFile(false);
+            _lastCreationLogDate = DateTime.Today;
+
             if (!IsDelayedWrite)
             {
                 _taskAppendLogsToDiskWithoutDelayed = Task.Factory.StartNew(token =>
@@ -223,11 +226,12 @@ namespace AdvancedTraceListeners.Xml
         private void WriteLogsToDisk()
         {
             var stringBuilder = new StringBuilder();
-            string traceToWrite;
 
-            while (_lines.TryDequeue(out traceToWrite))
+            while (_lines.TryDequeue(out var traceToWrite))
             {
                 var date = DateTime.Now.Date;
+                stringBuilder.Append(traceToWrite);
+
                 if (_lastCreationLogDate.Date < date)
                 {
                     _lastCreationLogDate = date;
@@ -241,7 +245,7 @@ namespace AdvancedTraceListeners.Xml
 
                     _logFileManager.CreateNewLogFile(false);
 
-                    stringBuilder.Append(traceToWrite);
+                    
                 }
                 else if (MaxFileSizeInByte > 0 && _logFileManager.FileSizeInByte + stringBuilder.Length > MaxFileSizeInByte)
                 {
@@ -253,8 +257,7 @@ namespace AdvancedTraceListeners.Xml
 
                     _logFileManager.CreateNewLogFile(true);
                 }
-                else
-                    stringBuilder.Append(traceToWrite);
+
             }
 
             if (stringBuilder.Length > 0)
