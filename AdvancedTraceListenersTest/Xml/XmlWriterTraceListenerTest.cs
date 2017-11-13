@@ -12,7 +12,7 @@ using NUnit.Framework;
 namespace AdvancedTraceListenersTest.Xml
 {
     [TestFixture]
-    public class XmlWriterTraceListenerTest
+    public class XmlWriterTraceListenerWithoutDelayedTest
     {
         [Test]
         [ExpectedException("System.ArgumentException")]
