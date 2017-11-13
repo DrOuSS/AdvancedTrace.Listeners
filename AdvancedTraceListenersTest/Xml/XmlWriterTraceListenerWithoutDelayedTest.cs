@@ -13,10 +13,18 @@ namespace AdvancedTraceListenersTest.Xml
     [TestFixture]
     public class XmlWriterTraceListenerWithoutDelayedTest
     {
+        private readonly string _currentDirectory;
+
+        public XmlWriterTraceListenerWithoutDelayedTest()
+        {
+            _currentDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Today.ToString("yyyy-MM-dd"));
+        }
+
         [Test]
         [ExpectedException("System.ArgumentException")]
         public void InstanciationExceptionWithHistoryDayEqualTo0()
         {
+            CleanOutput();
             using (new XmlWriterTraceListener("Application 1", null, 0))
             {
             }
@@ -26,6 +34,7 @@ namespace AdvancedTraceListenersTest.Xml
         [ExpectedException("System.ArgumentException")]
         public void InstanciationExceptionWithHistoryDayNegative()
         {
+            CleanOutput();
             using (new XmlWriterTraceListener("Application 1", null, -1))
             {
             }
@@ -35,6 +44,7 @@ namespace AdvancedTraceListenersTest.Xml
         [ExpectedException("System.IO.DirectoryNotFoundException")]
         public void InstanciationExceptionWithCustomPathInvalid()
         {
+            CleanOutput();
             using (var logStorage = new XmlWriterTraceListener("Application 1", @"B:\"))
                 logStorage.WriteLineEx("Test", "1");
         }
@@ -42,9 +52,7 @@ namespace AdvancedTraceListenersTest.Xml
         [Test]
         public void InstanciationVerifyCreationDirectory()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd")), true);
+            CleanOutput();
 
             using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory))
             {
@@ -59,6 +67,8 @@ namespace AdvancedTraceListenersTest.Xml
         [Test]
         public void InstanciationVerifyCreationFile()
         {
+            CleanOutput();
+
             InstanciationVerifyCreationDirectory();
 
             var path = AppDomain.CurrentDomain.BaseDirectory;
@@ -71,14 +81,11 @@ namespace AdvancedTraceListenersTest.Xml
         [Test]
         public void Instanciation5FileCreateFor5Instanciation()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(pathDirectoryDaily, true);
+            CleanOutput();
 
             for (var i = 1; i <= 5; i++)
             {
-                var pathFileSession = Path.Combine(pathDirectoryDaily, "Working_session_" + i + ".xml");
+                var pathFileSession = Path.Combine(_currentDirectory, "Working_session_" + i + ".xml");
 
                 using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory))
                     logStorage.WriteLineEx("Test", "1");
@@ -90,11 +97,11 @@ namespace AdvancedTraceListenersTest.Xml
         [Test]
         public void InstanciationCheckExistingFilesInDirectory()
         {
-            InstanciationVerifyCreationDirectory();
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
+            CleanOutput();
 
-            var filesInDirectory = Directory.GetFiles(pathDirectoryDaily).Select(Path.GetFileName).ToList();
+            InstanciationVerifyCreationDirectory();
+
+            var filesInDirectory = Directory.GetFiles(_currentDirectory).Select(Path.GetFileName).ToList();
 
             Assert.IsTrue(filesInDirectory.Count == 9, filesInDirectory.Count + " files found in directory");
             Assert.IsTrue(filesInDirectory.Contains("Working_session_1.xml"), "Working_session_1.xml is missing");
@@ -111,10 +118,7 @@ namespace AdvancedTraceListenersTest.Xml
         [Test]
         public void CheckHtmlMessageContent()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(pathDirectoryDaily, true);
+            CleanOutput();
 
             var message = "<html><head></head><body><form name=\"form1\" method=\"POST\" action=\"https://secure.ogone.com/ncol/test/orderstandard_UTF8.asp\" ><table><tr><td>PSPID</td><td><input name=\"PSPID\" type=\"Text\" value=\"kmedia\" style=\"width:600px;\"></td></tr><tr><td>ORDERID</td><td><input name=\"ORDERID\" type=\"Text\" value=\"39\" style=\"width:600px;\"></td></tr><tr><td>AMOUNT</td><td><input name=\"AMOUNT\" type=\"Text\" value=\"41860\" style=\"width:600px;\"></td></tr><tr><td>CURRENCY</td><td><input name=\"CURRENCY\" type=\"Text\" value=\"EUR\" style=\"width:600px;\"></td></tr><tr><td>LANGUAGE</td><td><input name=\"LANGUAGE\" type=\"Text\" value=\"fr_FR\" style=\"width:600px;\"></td></tr><tr><td>EMAIL</td><td><input name=\"EMAIL\" type=\"Text\" value=\"\" style=\"width:600px;\"></td></tr><tr><td>ECOM_BILLTO_POSTAL_NAME_FIRST</td><td><input name=\"ECOM_BILLTO_POSTAL_NAME_FIRST\" type=\"Text\" value=\"\" style=\"width:600px;\"></td></tr><tr><td>ECOM_BILLTO_POSTAL_NAME_LAST</td><td><input name=\"ECOM_BILLTO_POSTAL_NAME_LAST\" type=\"Text\" value=\"\" style=\"width:600px;\"></td></tr><tr><td>CN</td><td><input name=\"CN\" type=\"Text\" value=\"test\" style=\"width:600px;\"></td></tr><tr><td>PM</td><td><input name=\"PM\" type=\"Text\" value=\"CreditCard\" style=\"width:600px;\"></td></tr><tr><td>TITLE</td><td><input name=\"TITLE\" type=\"Text\" value=\"Album de l'ann?e\" style=\"width:600px;\"></td></tr><tr><td>BGCOLOR</td><td><input name=\"BGCOLOR\" type=\"Text\" value=\"#4e84c4\" style=\"width:600px;\"></td></tr><tr><td>TXTCOLOR</td><td><input name=\"TXTCOLOR\" type=\"Text\" value=\"#FFFFFF\" style=\"width:600px;\"></td></tr><tr><td>TBLBGCOLOR</td><td><input name=\"TBLBGCOLOR\" type=\"Text\" value=\"#FFFFFF\" style=\"width:600px;\"></td></tr><tr><td>TBLTXTCOLOR</td><td><input name=\"TBLTXTCOLOR\" type=\"Text\" value=\"#000000\" style=\"width:600px;\"></td></tr><tr><td>BUTTONBGCOLOR</td><td><input name=\"BUTTONBGCOLOR\" type=\"Text\" value=\"#00467F\" style=\"width:600px;\"></td></tr><tr><td>BUTTONTXTCOLOR</td><td><input name=\"BUTTONTXTCOLOR\" type=\"Text\" value=\"#FFFFFF\" style=\"width:600px;\"></td></tr><tr><td>FONTTYPE</td><td><input name=\"FONTTYPE\" type=\"Text\" value=\"Verdana\" style=\"width:600px;\"></td></tr><tr><td>accepturl</td><td><input name=\"accepturl\" type=\"Text\" value=\"http://193.178.140.140/fr-FR/Payment/PaySuccess\" style=\"width:600px;\"></td></tr><tr><td>exceptionurl</td><td><input name=\"exceptionurl\" type=\"Text\" value=\"http://193.178.140.140/fr-FR/Payment/PayException\" style=\"width:600px;\"></td></tr><tr><td>cancelurl</td><td><input name=\"cancelurl\" type=\"Text\" value=\"http://193.178.140.140/fr-FR/Payment/PayCancel\" style=\"width:600px;\"></td></tr><tr><td>BACKURL</td><td><input name=\"BACKURL\" type=\"Text\" value=\"http://193.178.140.140/fr-FR/Indexing/Payment\" style=\"width:600px;\"></td></tr><tr><td>HOMEURL</td><td><input name=\"HOMEURL\" type=\"Text\" value=\"http://193.178.140.140/fr-FR\" style=\"width:600px;\"></td></tr><tr><td>DECLINEURL</td><td><input name=\"DECLINEURL\" type=\"Text\" value=\"http://193.178.140.140/fr-FR/Payment/PayDecline\" style=\"width:600px;\"></td></tr><tr><td>SHASign</td><td><input name=\"SHASign\" type=\"Text\" value=\"0F980110CB081C6AB8FCD1359553D2BA3CBAC87C\" style=\"width:600px;\"></td></tr><tr><td colspan=\"2\"><input type=\"submit\" value=\"Submit\"/></td></tr></table></form><input name=\"Concat string\" type=\"Text\" value=\"ACCEPTURL=http://193.178.140.140/fr-FR/Payment/PaySuccessalexandresebastien12AMOUNT=41860alexandresebastien12BACKURL=http://193.178.140.140/fr-FR/Indexing/Paymentalexandresebastien12BGCOLOR=#4e84c4alexandresebastien12BUTTONBGCOLOR=#00467Falexandresebastien12BUTTONTXTCOLOR=#FFFFFFalexandresebastien12CANCELURL=http://193.178.140.140/fr-FR/Payment/PayCancelalexandresebastien12CN=testalexandresebastien12CURRENCY=EURalexandresebastien12DECLINEURL=http://193.178.140.140/fr-FR/Payment/PayDeclinealexandresebastien12EXCEPTIONURL=http://193.178.140.140/fr-FR/Payment/PayExceptionalexandresebastien12FONTTYPE=Verdanaalexandresebastien12HOMEURL=http://193.178.140.140/fr-FRalexandresebastien12LANGUAGE=fr_FRalexandresebastien12ORDERID=39alexandresebastien12PM=CreditCardalexandresebastien12PSPID=kmediaalexandresebastien12TBLBGCOLOR=#FFFFFFalexandresebastien12TBLTXTCOLOR=#000000alexandresebastien12TITLE=Album de l&#39;ann&#233;ealexandresebastien12TXTCOLOR=#FFFFFFalexandresebastien12\" style=\"width:600px;\"></body></html>";
 
@@ -127,27 +131,24 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
         public void CheckXmlValidityForNewFile()
         {
+            CleanOutput();
             InstanciationVerifyCreationDirectory();
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
+
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
         public void Check1TraceInformationWithoutDelayed()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(pathDirectoryDaily, true);
+            CleanOutput();
 
             using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false))
             {
@@ -157,16 +158,13 @@ namespace AdvancedTraceListenersTest.Xml
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
         public void Check1TraceErrorWithoutDelayed()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(pathDirectoryDaily, true);
+            CleanOutput();
 
             using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false))
             {
@@ -192,16 +190,13 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
         public void Check1TraceWarningWithoutDelayed()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(pathDirectoryDaily, true);
+            CleanOutput();
 
             using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false))
             {
@@ -211,16 +206,13 @@ namespace AdvancedTraceListenersTest.Xml
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
         public void Check1TraceInformation1TraceError1TraceWarningWithoutDelayed()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(pathDirectoryDaily, true);
+            CleanOutput();
 
             using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false))
             {
@@ -269,14 +261,13 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
         public void StressTrace10ThreadAnd10000TraceWithoutDelayed()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
+            CleanOutput();
 
             using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false))
             {
@@ -307,14 +298,13 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
         }
 
         [Test]
         public void StressTrace1ThreadAnd100000TraceWithoutDelayed()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
+            CleanOutput();
 
             using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false))
             {
@@ -336,7 +326,13 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
+        }
+
+        private void CleanOutput()
+        {
+            if (Directory.Exists(_currentDirectory))
+                Directory.Delete(_currentDirectory, true);
         }
     }
 }

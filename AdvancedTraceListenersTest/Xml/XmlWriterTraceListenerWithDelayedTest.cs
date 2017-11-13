@@ -13,13 +13,17 @@ namespace AdvancedTraceListenersTest.Xml
 {
     public class XmlWriterTraceListenerWithDelayedTest
     {
+        private readonly string _currentDirectory;
+
+        public XmlWriterTraceListenerWithDelayedTest()
+        {
+            _currentDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, DateTime.Today.ToString("yyyy-MM-dd"));
+        }
+
         [Test]
         public void Check1TraceInformationWithDelayed()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(pathDirectoryDaily, true);
+            CleanOutput();
 
             using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory))
             {
@@ -29,7 +33,7 @@ namespace AdvancedTraceListenersTest.Xml
                 Thread.Sleep(31000);
 
                 var xmlDoc = new XmlDocument();
-                xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+                xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
 
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
@@ -38,10 +42,7 @@ namespace AdvancedTraceListenersTest.Xml
         [Test]
         public void StressTrace10ThreadAnd10000TraceWithDelayed()
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
-            var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            if (Directory.GetDirectories(path).Count(p => Path.GetFileName(p) == DateTime.Now.ToString("yyyy-MM-dd")) == 1)
-                Directory.Delete(pathDirectoryDaily, true);
+            CleanOutput();
 
             System.Diagnostics.Debug.WriteLine("DirectoryCreated");
 
@@ -77,8 +78,14 @@ namespace AdvancedTraceListenersTest.Xml
                 Thread.Sleep(31000);
 
                 var xmlDoc = new XmlDocument();
-                xmlDoc.Load(Path.Combine(pathDirectoryDaily, "Working_session_1.xml"));
+                xmlDoc.Load(Path.Combine(_currentDirectory, "Working_session_1.xml"));
             }
+        }
+
+        private void CleanOutput()
+        {
+            if (Directory.Exists(_currentDirectory))
+                Directory.Delete(_currentDirectory, true);
         }
     }
 }
