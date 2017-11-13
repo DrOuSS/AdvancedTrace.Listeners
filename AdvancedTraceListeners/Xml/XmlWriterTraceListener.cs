@@ -42,13 +42,15 @@ namespace AdvancedTraceListeners.Xml
 
         #region Contructor / Destructor
 
-        public XmlWriterTraceListener(string applicationName, string customLogPath = null, int historyDayCount = 2, bool isDelayedWrite = true)
+        public XmlWriterTraceListener(string applicationName, string customLogPath = null, int historyDayCount = 2, bool isDelayedWrite = true, long maxFileSizeInByte = 0)
         {
             CustomLogPath = customLogPath;
             IsDelayedWrite = isDelayedWrite;
             HistoryDayCount = historyDayCount;
             ApplicationName = applicationName;
             _lastCreationLogDate = DateTime.MinValue;
+            MaxFileSizeInByte = maxFileSizeInByte;
+
 
             _logFileManager = new LogFileManager(ApplicationName, BaseRootPath, historyDayCount);
 
@@ -184,10 +186,12 @@ namespace AdvancedTraceListeners.Xml
         }
         private volatile string _baseRootPath = string.Empty;
 
+        public long MaxFileSizeInByte { get; }
+
         #endregion
 
         #region Advanced Trace Methods
-        
+
         public override void WriteEx(string pstrType, object value, string userCategory = null, Exception exception = null)
         {
             WriteLineEx(pstrType, value, userCategory, exception);
@@ -235,9 +239,19 @@ namespace AdvancedTraceListeners.Xml
                         stringBuilder.Clear();
                     }
 
-                    _logFileManager.CreateNewLogFile();
+                    _logFileManager.CreateNewLogFile(false);
 
                     stringBuilder.Append(traceToWrite);
+                }
+                else if (MaxFileSizeInByte > 0 && _logFileManager.FileSizeInByte + stringBuilder.Length > MaxFileSizeInByte)
+                {
+                    if (stringBuilder.Length > 0)
+                    {
+                        _logFileManager.Write(stringBuilder.ToString());
+                        stringBuilder.Clear();
+                    }
+
+                    _logFileManager.CreateNewLogFile(true);
                 }
                 else
                     stringBuilder.Append(traceToWrite);
@@ -338,6 +352,9 @@ namespace AdvancedTraceListeners.Xml
 
             private const int CloseDelay = 200;
 
+            private const string BaseFileName = "Working_session_";
+
+
             #region Constructor / destructor
 
             public LogFileManager(string applicationName, string rootLogPath, int onDiskLogHistoryDayCount) : this(applicationName, rootLogPath, onDiskLogHistoryDayCount, Encoding.ASCII) { }
@@ -382,6 +399,8 @@ namespace AdvancedTraceListeners.Xml
             }
             private volatile string _currentFilePath = string.Empty;
 
+            public long FileSizeInByte { get; private set; }
+
             #endregion
 
             #region History management
@@ -400,7 +419,7 @@ namespace AdvancedTraceListeners.Xml
                         {
                             if (Directory.GetCreationTime(dirToCheck).Date <= dateLimit)
                             {
-                                if (Directory.GetFiles(dirToCheck, "Working_session_*.xml").Length > 0)
+                                if (Directory.GetFiles(dirToCheck, $"{BaseFileName}*.xml").Length > 0)
                                     Directory.Delete(dirToCheck, true);
                             }
                         }
@@ -416,11 +435,12 @@ namespace AdvancedTraceListeners.Xml
 
             #region File management
 
-            public void CreateNewLogFile()
+            public void CreateNewLogFile(bool isFragment)
             {
                 string rootPath = Path.Combine(_rootLogPath, DateTime.Now.ToString("yyyy-MM-dd"));
 
                 int sessionNumber = 1;
+                int fragmentNumber = 1;
 
                 lock (_fileStreamLocker)
                 {
@@ -430,77 +450,117 @@ namespace AdvancedTraceListeners.Xml
                     if (!Directory.Exists(rootPath))
                     {
                         Directory.CreateDirectory(rootPath);
-						var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 
 
                         var resources = assembly.GetManifestResourceNames();
 
 
-						using (var fileStream = new FileStream (Path.Combine (rootPath, "problem.png"), FileMode.Create))
-						{
-						    var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".problem.")));
+                        using (var fileStream = new FileStream(Path.Combine(rootPath, "problem.png"), FileMode.Create))
+                        {
+                            var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".problem.")));
                             Debug.Assert(stream != null, "problem.png");
-						    stream.CopyTo(fileStream);
-						}
+                            stream.CopyTo(fileStream);
+                        }
 
-						using (var fileStream = new FileStream (Path.Combine (rootPath, "warning.png"), FileMode.Create)) {
+                        using (var fileStream = new FileStream(Path.Combine(rootPath, "warning.png"), FileMode.Create))
+                        {
                             var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".warning.")));
                             Debug.Assert(stream != null, "warning.png");
-						    stream.CopyTo(fileStream);
-						}
+                            stream.CopyTo(fileStream);
+                        }
 
-						using (var fileStream = new FileStream (Path.Combine (rootPath, "fatal.png"), FileMode.Create)) {
+                        using (var fileStream = new FileStream(Path.Combine(rootPath, "fatal.png"), FileMode.Create))
+                        {
                             var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".fatal.")));
                             Debug.Assert(stream != null, "fatal.png");
-						    stream.CopyTo(fileStream);
-						}
+                            stream.CopyTo(fileStream);
+                        }
 
-						using (var fileStream = new FileStream (Path.Combine (rootPath, "info.png"), FileMode.Create)) {
+                        using (var fileStream = new FileStream(Path.Combine(rootPath, "info.png"), FileMode.Create))
+                        {
                             var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".info.")));
                             Debug.Assert(stream != null, "info.png");
-						    stream.CopyTo(fileStream);
-						}
+                            stream.CopyTo(fileStream);
+                        }
 
-						using (var fileStream = new FileStream (Path.Combine (rootPath, "sql.png"), FileMode.Create)) {
+                        using (var fileStream = new FileStream(Path.Combine(rootPath, "sql.png"), FileMode.Create))
+                        {
                             var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".sql.")));
                             Debug.Assert(stream != null, "sql.png");
-						    stream.CopyTo(fileStream);
-						}
+                            stream.CopyTo(fileStream);
+                        }
 
-						using (var fileStream = new FileStream (Path.Combine (rootPath, "database.png"), FileMode.Create)) {
+                        using (var fileStream = new FileStream(Path.Combine(rootPath, "database.png"), FileMode.Create))
+                        {
                             var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".database.")));
                             Debug.Assert(stream != null, "database.png not found");
-						    stream.CopyTo(fileStream);
-						}
+                            stream.CopyTo(fileStream);
+                        }
 
-						using (var fileStream = new FileStream (Path.Combine (rootPath, "bug.png"), FileMode.Create)) {
+                        using (var fileStream = new FileStream(Path.Combine(rootPath, "bug.png"), FileMode.Create))
+                        {
                             var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".bug.")));
-						    Debug.Assert(stream != null, "bug.png not found");
-						    stream.CopyTo(fileStream);
-						}
+                            Debug.Assert(stream != null, "bug.png not found");
+                            stream.CopyTo(fileStream);
+                        }
 
-						using (var fileStream = new FileStream (Path.Combine (rootPath, "LogsTemplate.xslt"), FileMode.Create)) {
+                        using (var fileStream = new FileStream(Path.Combine(rootPath, "LogsTemplate.xslt"), FileMode.Create))
+                        {
                             var stream = assembly.GetManifestResourceStream(resources.First(e => e.Contains(".LogsTemplate.")));
                             Debug.Assert(stream != null, "LogsTemplate.xslt not found");
-						    stream.CopyTo(fileStream);
-						}
+                            stream.CopyTo(fileStream);
+                        }
 
                         Task.Factory.StartNew(CleanDiskHistory);
 
                     }
                     else
-                        sessionNumber = Directory.GetFiles(rootPath, "*.xml").Length + 1;
+                    {
+                        var sessionDetails = Directory.EnumerateFiles(rootPath, "*.xml").Select(GetSessionDetails).ToList();
+                        if (sessionDetails.Count > 0)
+                        {
+                            sessionNumber = sessionDetails.Select(p => p.SessionNumber).Max();
+                            fragmentNumber = sessionDetails.Where(el => el.SessionNumber == sessionNumber).Select(p => p.FragmentNumber).Max();
 
-                    CurrentFilePath = Path.Combine(rootPath, String.Format("Working_session_{0}.xml", sessionNumber));
+                            if (!isFragment)
+                                sessionNumber++;
+                            else
+                                fragmentNumber++;
+                        }
+                    }
+
+                    CurrentFilePath = Path.Combine(rootPath, $"{BaseFileName}{sessionNumber}_{fragmentNumber}.xml");
 
                     var xmlHeader = "<?xml version=\"1.0\"?>";
                     if (Equals(_encoding, Encoding.UTF8))
                         xmlHeader = "<?xml version=\"1.0\" encoding=\"utf-8\"?>";
 
-                    File.WriteAllText(CurrentFilePath, string.Format("{2}<?xml-stylesheet type='text/xsl' href='LogsTemplate.xslt'?><Logs application_name=\"{0}\" filename=\"Working_session_{1}.xml\"></Logs>", _applicationName, sessionNumber,xmlHeader), _encoding);
+                    File.WriteAllText(CurrentFilePath, $"{xmlHeader}<?xml-stylesheet type='text/xsl' href='LogsTemplate.xslt'?><Logs application_name=\"{_applicationName}\" filename=\"{BaseFileName}{sessionNumber}_{fragmentNumber}.xml\"></Logs>", _encoding);
+
+                    FileSizeInByte = 0;
                 }
 
                 
+            }
+
+            private class SessionDetail
+            {
+                public int SessionNumber { get; set; }
+                public int FragmentNumber { get; set; }
+            }
+
+            private SessionDetail GetSessionDetails(string filePath)
+            {
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filePath);
+                // ReSharper disable once PossibleNullReferenceException
+                var sessionDetails = fileNameWithoutExtension.Replace(BaseFileName, "").Split('_');
+
+                return new SessionDetail
+                       {
+                           SessionNumber = Convert.ToInt32(sessionDetails[0]),
+                           FragmentNumber = Convert.ToInt32(sessionDetails[1])
+                       };
             }
 
             public void Write(string message)
@@ -516,6 +576,8 @@ namespace AdvancedTraceListeners.Xml
                     }
 
                     _fileStream.Write(_encoding.GetBytes(message), 0, message.Length);
+
+                    FileSizeInByte = _fileStream.Length;
                 }
             }
 

@@ -25,7 +25,7 @@ namespace AdvancedTraceListenersTest.Xml
                 Thread.Sleep(31000);
 
                 var xmlDoc = new XmlDocument();
-                xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+                xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
 
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
@@ -70,7 +70,7 @@ namespace AdvancedTraceListenersTest.Xml
                 Thread.Sleep(31000);
 
                 var xmlDoc = new XmlDocument();
-                xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+                xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
             }
         }
     }

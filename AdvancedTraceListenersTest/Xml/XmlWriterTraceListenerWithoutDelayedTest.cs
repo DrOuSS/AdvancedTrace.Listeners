@@ -67,7 +67,7 @@ namespace AdvancedTraceListenersTest.Xml
 
             var path = AppDomain.CurrentDomain.BaseDirectory;
             var pathDirectoryDaily = Path.Combine(path, DateTime.Now.ToString("yyyy-MM-dd"));
-            var pathFileSession = Path.Combine(pathDirectoryDaily, "Working_session_1.xml");
+            var pathFileSession = Path.Combine(pathDirectoryDaily, "Working_session_1_1.xml");
 
             Assert.IsTrue(File.Exists(pathFileSession));
         }
@@ -79,7 +79,7 @@ namespace AdvancedTraceListenersTest.Xml
 
             for (var i = 1; i <= 5; i++)
             {
-                var pathFileSession = Path.Combine(CurrentDirectory, "Working_session_" + i + ".xml");
+                var pathFileSession = Path.Combine(CurrentDirectory, "Working_session_" + i + "_1.xml");
 
                 using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory))
                     logStorage.WriteLineEx("Test", "1");
@@ -98,7 +98,7 @@ namespace AdvancedTraceListenersTest.Xml
             var filesInDirectory = Directory.GetFiles(CurrentDirectory).Select(Path.GetFileName).ToList();
 
             Assert.IsTrue(filesInDirectory.Count == 9, filesInDirectory.Count + " files found in directory");
-            Assert.IsTrue(filesInDirectory.Contains("Working_session_1.xml"), "Working_session_1.xml is missing");
+            Assert.IsTrue(filesInDirectory.Contains("Working_session_1_1.xml"), "Working_session_1_1.xml is missing");
             Assert.IsTrue(filesInDirectory.Contains("LogsTemplate.xslt"), "LogsTemplate.xslt is missing");
             Assert.IsTrue(filesInDirectory.Contains("problem.png"), "problem.png is missing");
             Assert.IsTrue(filesInDirectory.Contains("warning.png"), "warning.png is missing");
@@ -125,7 +125,7 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
         }
 
         [Test]
@@ -136,7 +136,7 @@ namespace AdvancedTraceListenersTest.Xml
 
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
         }
 
         [Test]
@@ -152,7 +152,7 @@ namespace AdvancedTraceListenersTest.Xml
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
         }
 
         [Test]
@@ -184,7 +184,7 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
         }
 
         [Test]
@@ -200,7 +200,7 @@ namespace AdvancedTraceListenersTest.Xml
                 AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
             }
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
         }
 
         [Test]
@@ -255,7 +255,7 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
         }
 
         [Test]
@@ -292,7 +292,7 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
         }
 
         [Test]
@@ -320,7 +320,86 @@ namespace AdvancedTraceListenersTest.Xml
             }
 
             var xmlDoc = new XmlDocument();
-            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1.xml"));
+            xmlDoc.Load(Path.Combine(CurrentDirectory, "Working_session_1_1.xml"));
+        }
+
+        [Test]
+        public void StressTrace10ThreadAnd10000TraceWithoutDelayedWithFragment()
+        {
+            CleanOutput();
+
+            using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false, 1400000))
+            {
+                AdvancedTrace.AddTraceListener(AdvancedTrace.ListenerType.All, logStorage);
+                var tasks = new List<Task>();
+
+                var stopWatch = new System.Diagnostics.Stopwatch();
+                stopWatch.Start();
+                for (var i = 0; i < 10; i++)
+                {
+                    var i1 = i;
+                    tasks.Add(Task.Factory.StartNew(() =>
+                    {
+                        for (var j = 0; j < 10000; j++)
+                            AdvancedTrace.TraceInformation("MyInformation " + i1 + " " + j, "Info");
+                    }));
+                }
+
+                Task.WaitAll(tasks.ToArray());
+
+                logStorage.Flush();
+
+                stopWatch.Stop();
+                var ts = stopWatch.Elapsed;
+                System.Diagnostics.Debug.WriteLine("Time Execute Trace :" + $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds / 10:00}");
+
+                AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
+            }
+
+            var fileNames = Directory.GetFiles(CurrentDirectory, "*.xml").Select(p => new { FilePath = p, FileName = Path.GetFileName(p) }).OrderBy(p => p.FileName.Length).ThenBy(p => p.FileName).ToList();
+
+            Assert.That(fileNames.Count, Is.EqualTo(10));
+            for (var i = 0; i < fileNames.Count; i++)
+            {
+                Assert.That(fileNames[i].FileName, Is.EqualTo($"Working_session_1_{i + 1}.xml"));
+                var xmlDoc = new XmlDocument();
+                xmlDoc.Load(fileNames[i].FilePath);
+            }
+        }
+
+        [Test]
+        public void StressTrace1ThreadAnd100000TraceWithoutDelayedWithFragment()
+        {
+            CleanOutput();
+
+            using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false, 1400000))
+            {
+                AdvancedTrace.AddTraceListener(AdvancedTrace.ListenerType.All, logStorage);
+
+                var stopWatch = new System.Diagnostics.Stopwatch();
+                stopWatch.Start();
+
+                for (var j = 0; j < 100000; j++)
+                    AdvancedTrace.TraceInformation("MyInformation " + j, "Info");
+
+                logStorage.Flush();
+
+                stopWatch.Stop();
+                var ts = stopWatch.Elapsed;
+                System.Diagnostics.Debug.WriteLine("Time Execute Trace :" + $"{ts.Hours:00}:{ts.Minutes:00}:{ts.Seconds:00}.{ts.Milliseconds / 10:00}");
+
+                AdvancedTrace.RemoveTraceListener(AdvancedTrace.ListenerType.All, logStorage);
+            }
+
+            var fileNames = Directory.GetFiles(CurrentDirectory, "*.xml").Select(p => new { FilePath = p, FileName = Path.GetFileName(p) }).OrderBy(p => p.FileName.Length).ThenBy(p => p.FileName).ToList();
+
+            Assert.That(fileNames.Count, Is.EqualTo(10));
+            for (var i = 0; i < fileNames.Count; i++)
+            {
+                Assert.That(fileNames[i].FileName, Is.EqualTo($"Working_session_1_{i + 1}.xml"));
+                var xmlDoc = new XmlDocument();
+                xmlDoc.Load(fileNames[i].FilePath);
+            }
         }
 
 
