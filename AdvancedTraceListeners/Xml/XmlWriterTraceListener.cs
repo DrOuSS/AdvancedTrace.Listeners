@@ -574,7 +574,7 @@ namespace AdvancedTraceListeners.Xml
                 {
                     if (_fileStream == null)
                     {
-                        _fileStream = File.Open(CurrentFilePath, FileMode.Open, FileAccess.Write);
+                        _fileStream = File.Open(CurrentFilePath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite);
                         _fileStream.Position = _fileStream.Length - _closeXmlNodeBytes.Length;
                     }
 

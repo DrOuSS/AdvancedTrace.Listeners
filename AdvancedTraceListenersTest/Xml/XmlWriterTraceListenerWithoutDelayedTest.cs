@@ -402,6 +402,43 @@ namespace AdvancedTraceListenersTest.Xml
             }
         }
 
+        [Test]
+        public void CheckSharedFileLogWritting()
+        {
+            CleanOutput();
+            string currentDirectory;
+            using (var logStorage = new XmlWriterTraceListener("Application 1", AppDomain.CurrentDomain.BaseDirectory, 2, false))
+            {
+                currentDirectory = Path.GetDirectoryName(logStorage.CurrentFilePath);
+
+                AdvancedTrace.AddTraceListener(AdvancedTrace.ListenerType.All, logStorage);
+
+                for (var j = 0; j < 100000; j++)
+                {
+                    if (j % 10000 == 0 && j > 1)
+                    {
+                        Assert.DoesNotThrow(() =>
+                                            {
+                                                using (File.Open(logStorage.CurrentFilePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                                {
+                                                }
+                                            });
+
+                    }
+
+                    AdvancedTrace.TraceInformation("Test information " + j, Task.CurrentId.ToString());
+                }
+            }
+
+            var fileNames = Directory.GetFiles(currentDirectory, "*.xml").Select(p => new { FilePath = p, FileName = Path.GetFileName(p) }).OrderBy(p => p.FileName.Length).ThenBy(p => p.FileName).ToList();
+
+            Assert.That(fileNames.Count, Is.EqualTo(1));
+
+            Assert.That(fileNames[0].FileName, Is.EqualTo($"Working_session_1_1.xml"));
+            var xmlDoc = new XmlDocument();
+            xmlDoc.Load(fileNames[0].FilePath);
+        }
+
 
     }
 }
